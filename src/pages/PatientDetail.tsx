@@ -1,100 +1,138 @@
 
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Upload, FileText, Activity, AlertTriangle, CheckCircle, LogOut } from 'lucide-react';
+import { Camera, Upload, FileText, Activity, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react';
 import PhotoUpload from '@/components/PhotoUpload';
 import ABGAnalysis from '@/components/ABGAnalysis';
 import VentilatorPanel from '@/components/VentilatorPanel';
 import LabResults from '@/components/LabResults';
 import TreatmentPlan from '@/components/TreatmentPlan';
-import AuthForm from '@/components/AuthForm';
-import { authService, patientService } from '@/services/supabaseService';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { patientService, authService, abgService, ventilatorService, labService, treatmentPlanService } from '@/services/supabaseService';
+import { format } from 'date-fns';
 
-const Index = () => {
-  const [user, setUser] = useState<any>(null);
+const PatientDetail = () => {
+  const { patientId } = useParams<{ patientId: string }>();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [patient, setPatient] = useState<any>(null);
+  const [activeAnalysis, setActiveAnalysis] = useState('upload');
   const [uploadedData, setUploadedData] = useState({
     abg: null,
     ventilator: null,
     labs: null
   });
-  const [activeAnalysis, setActiveAnalysis] = useState('upload');
-  const [currentPatient, setCurrentPatient] = useState<any>(null);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
+    const checkAuth = async () => {
       try {
-        const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
+        const user = await authService.getCurrentUser();
         
-        // If user is logged in, create or get a default patient
-        if (currentUser) {
-          try {
-            const patients = await patientService.getPatients();
-            if (patients && patients.length > 0) {
-              setCurrentPatient(patients[0]);
-            } else {
-              // Create a default patient if none exists
-              const newPatient = await patientService.createPatient({
-                name: 'Anonymous Patient',
-                user_id: currentUser.id,
-              });
-              setCurrentPatient(newPatient);
-            }
-          } catch (error) {
-            console.error("Error getting patient:", error);
-          }
+        if (!user) {
+          navigate('/');
+          return;
         }
+        
+        if (!patientId) {
+          navigate('/patients');
+          return;
+        }
+        
+        loadPatientDetails();
       } catch (error) {
-        console.error("Error checking authentication:", error);
-      } finally {
-        setLoading(false);
+        console.error("Auth error:", error);
+        navigate('/');
       }
     };
     
-    checkUser();
-  }, []);
+    checkAuth();
+  }, [patientId, navigate]);
 
-  const handleDataUpload = (type: string, data: any) => {
-    setUploadedData(prev => ({
-      ...prev,
-      [type]: data
-    }));
-    console.log(`${type} data uploaded:`, data);
-  };
-
-  const handleLogout = async () => {
+  const loadPatientDetails = async () => {
+    if (!patientId) return;
+    
     try {
-      await authService.signOut();
-      setUser(null);
-      setCurrentPatient(null);
-      setUploadedData({
-        abg: null,
-        ventilator: null,
-        labs: null
-      });
-      toast({
-        title: "Logged Out Successfully",
-        description: "You have been securely logged out",
-      });
+      setLoading(true);
+      
+      // Get patient details
+      const patientData = await patientService.getPatientById(patientId);
+      setPatient(patientData);
+      
+      // Try to load the latest records
+      const [abgRecords, ventRecords, labRecords] = await Promise.all([
+        abgService.getABGByPatientId(patientId),
+        ventilatorService.getVentilatorByPatientId(patientId),
+        labService.getLabsByPatientId(patientId)
+      ]);
+      
+      // Set the latest records if they exist
+      if (abgRecords && abgRecords.length > 0) {
+        setUploadedData(prev => ({ ...prev, abg: abgRecords[0] }));
+      }
+      
+      if (ventRecords && ventRecords.length > 0) {
+        setUploadedData(prev => ({ ...prev, ventilator: ventRecords[0] }));
+      }
+      
+      if (labRecords && labRecords.length > 0) {
+        setUploadedData(prev => ({ ...prev, labs: labRecords[0] }));
+      }
     } catch (error) {
-      console.error("Error logging out:", error);
+      console.error("Error loading patient details:", error);
       toast({
-        title: "Logout Failed",
-        description: "There was a problem logging out",
+        title: "Error Loading Patient",
+        description: "There was a problem loading the patient data",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAuthSuccess = (userData: any) => {
-    setUser(userData);
+  const handleDataUpload = async (type: string, data: any) => {
+    if (!patientId) return;
+    
+    try {
+      let savedResult;
+      
+      // Prepare data with patient ID
+      const recordData = {
+        ...data,
+        patient_id: patientId
+      };
+      
+      // Save to the appropriate service
+      if (type === 'abg') {
+        savedResult = await abgService.createABG(recordData);
+      } else if (type === 'ventilator') {
+        savedResult = await ventilatorService.createVentilatorSettings(recordData);
+      } else if (type === 'labs') {
+        savedResult = await labService.createLabResults(recordData);
+      }
+      
+      // Update state with saved data
+      setUploadedData(prev => ({
+        ...prev,
+        [type]: savedResult
+      }));
+      
+      toast({
+        title: "Data Saved Successfully",
+        description: `${type.toUpperCase()} data has been saved to the patient record`,
+      });
+    } catch (error) {
+      console.error(`Error saving ${type} data:`, error);
+      toast({
+        title: "Error Saving Data",
+        description: `There was a problem saving the ${type} data`,
+        variant: "destructive"
+      });
+    }
   };
 
   const hasAnyData = uploadedData.abg || uploadedData.ventilator || uploadedData.labs;
@@ -104,25 +142,26 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading CritiScan...</p>
+          <p className="mt-4 text-gray-600">Loading patient data...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!patient) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 py-12">
-        <div className="text-center mb-8">
-          <div className="p-3 bg-blue-600 rounded-lg inline-block mb-3">
-            <Activity className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">CritiScan ICU AI</h1>
-          <p className="text-gray-600 mt-1">Instant Critical Care Analysis</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-center">
+          <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
+          <h2 className="mt-4 text-xl font-bold">Patient Not Found</h2>
+          <p className="mt-2 text-gray-600">The patient you're looking for doesn't exist</p>
+          <Button 
+            onClick={() => navigate('/patients')}
+            className="mt-4"
+          >
+            Back to Patients
+          </Button>
         </div>
-        
-        <AuthForm onAuthSuccess={handleAuthSuccess} />
-        <Toaster />
       </div>
     );
   }
@@ -139,22 +178,52 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">CritiScan ICU AI</h1>
-                <p className="text-sm text-gray-600">Instant Critical Care Analysis</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-600">Patient:</p>
+                  <Badge>{patient.name}</Badge>
+                  {patient.medical_record_number && (
+                    <Badge variant="outline">MRN: {patient.medical_record_number}</Badge>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="text-blue-600 border-blue-600">
-                ICU-Grade AI
-              </Badge>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-1" /> Logout
-              </Button>
-            </div>
+            <Button 
+              onClick={() => navigate('/patients')}
+              variant="outline"
+              size="sm"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              All Patients
+            </Button>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Patient Info */}
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <p className="text-sm text-gray-500">Patient Name</p>
+                <p className="font-medium">{patient.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Medical Record Number</p>
+                <p className="font-medium">{patient.medical_record_number || 'Not Provided'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Date of Birth</p>
+                <p className="font-medium">
+                  {patient.date_of_birth 
+                    ? format(new Date(patient.date_of_birth), 'MM/dd/yyyy')
+                    : 'Not Provided'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
         <Tabs value={activeAnalysis} onValueChange={setActiveAnalysis} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto">
             <TabsTrigger value="upload" className="flex items-center gap-2">
@@ -283,4 +352,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default PatientDetail;

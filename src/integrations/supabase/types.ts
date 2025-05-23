@@ -9,7 +9,257 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      abg_results: {
+        Row: {
+          anion_gap: number | null
+          base_excess: number | null
+          created_at: string | null
+          fio2: number | null
+          hco3: number | null
+          id: string
+          image_path: string | null
+          notes: string | null
+          paco2: number | null
+          pao2: number | null
+          patient_id: string | null
+          ph: number | null
+        }
+        Insert: {
+          anion_gap?: number | null
+          base_excess?: number | null
+          created_at?: string | null
+          fio2?: number | null
+          hco3?: number | null
+          id?: string
+          image_path?: string | null
+          notes?: string | null
+          paco2?: number | null
+          pao2?: number | null
+          patient_id?: string | null
+          ph?: number | null
+        }
+        Update: {
+          anion_gap?: number | null
+          base_excess?: number | null
+          created_at?: string | null
+          fio2?: number | null
+          hco3?: number | null
+          id?: string
+          image_path?: string | null
+          notes?: string | null
+          paco2?: number | null
+          pao2?: number | null
+          patient_id?: string | null
+          ph?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abg_results_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_results: {
+        Row: {
+          calcium: number | null
+          created_at: string | null
+          creatinine: number | null
+          hemoglobin: number | null
+          id: string
+          image_path: string | null
+          lactate: number | null
+          magnesium: number | null
+          notes: string | null
+          patient_id: string | null
+          potassium: number | null
+          sodium: number | null
+        }
+        Insert: {
+          calcium?: number | null
+          created_at?: string | null
+          creatinine?: number | null
+          hemoglobin?: number | null
+          id?: string
+          image_path?: string | null
+          lactate?: number | null
+          magnesium?: number | null
+          notes?: string | null
+          patient_id?: string | null
+          potassium?: number | null
+          sodium?: number | null
+        }
+        Update: {
+          calcium?: number | null
+          created_at?: string | null
+          creatinine?: number | null
+          hemoglobin?: number | null
+          id?: string
+          image_path?: string | null
+          lactate?: number | null
+          magnesium?: number | null
+          notes?: string | null
+          patient_id?: string | null
+          potassium?: number | null
+          sodium?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_results_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          created_at: string | null
+          date_of_birth: string | null
+          id: string
+          medical_record_number: string | null
+          name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_of_birth?: string | null
+          id?: string
+          medical_record_number?: string | null
+          name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_of_birth?: string | null
+          id?: string
+          medical_record_number?: string | null
+          name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      treatment_plans: {
+        Row: {
+          abg_id: string | null
+          created_at: string | null
+          id: string
+          immediate_actions: Json | null
+          lab_id: string | null
+          medication_orders: Json | null
+          monitoring_plan: Json | null
+          notes: string | null
+          patient_id: string | null
+          ventilator_adjustments: Json | null
+          ventilator_id: string | null
+        }
+        Insert: {
+          abg_id?: string | null
+          created_at?: string | null
+          id?: string
+          immediate_actions?: Json | null
+          lab_id?: string | null
+          medication_orders?: Json | null
+          monitoring_plan?: Json | null
+          notes?: string | null
+          patient_id?: string | null
+          ventilator_adjustments?: Json | null
+          ventilator_id?: string | null
+        }
+        Update: {
+          abg_id?: string | null
+          created_at?: string | null
+          id?: string
+          immediate_actions?: Json | null
+          lab_id?: string | null
+          medication_orders?: Json | null
+          monitoring_plan?: Json | null
+          notes?: string | null
+          patient_id?: string | null
+          ventilator_adjustments?: Json | null
+          ventilator_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_plans_abg_id_fkey"
+            columns: ["abg_id"]
+            isOneToOne: false
+            referencedRelation: "abg_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "lab_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_ventilator_id_fkey"
+            columns: ["ventilator_id"]
+            isOneToOne: false
+            referencedRelation: "ventilator_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ventilator_settings: {
+        Row: {
+          created_at: string | null
+          fio2: number | null
+          id: string
+          image_path: string | null
+          mode: string | null
+          notes: string | null
+          patient_id: string | null
+          peep: number | null
+          respiratory_rate: number | null
+          tidal_volume: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          fio2?: number | null
+          id?: string
+          image_path?: string | null
+          mode?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          peep?: number | null
+          respiratory_rate?: number | null
+          tidal_volume?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          fio2?: number | null
+          id?: string
+          image_path?: string | null
+          mode?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          peep?: number | null
+          respiratory_rate?: number | null
+          tidal_volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventilator_settings_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

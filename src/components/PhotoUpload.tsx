@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Camera, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { fileService } from '@/services/supabaseService';
+import { toast } from '@/hooks/use-toast';
 
 interface PhotoUploadProps {
   title: string;
@@ -11,11 +13,13 @@ interface PhotoUploadProps {
   icon: React.ReactNode;
   onUpload: (data: any) => void;
   priority: 'high' | 'medium' | 'low';
+  dataType: 'abg' | 'ventilator' | 'labs';
 }
 
-const PhotoUpload = ({ title, description, icon, onUpload, priority }: PhotoUploadProps) => {
+const PhotoUpload = ({ title, description, icon, onUpload, priority, dataType }: PhotoUploadProps) => {
   const [isUploaded, setIsUploaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
   const priorityColors = {
     high: 'border-red-200 bg-red-50',
@@ -35,23 +39,42 @@ const PhotoUpload = ({ title, description, icon, onUpload, priority }: PhotoUplo
 
     setIsProcessing(true);
     
-    // Simulate AI processing time
-    setTimeout(() => {
-      const mockData = generateMockData(title);
-      onUpload(mockData);
-      setIsUploaded(true);
+    try {
+      // Upload file to Supabase storage
+      const uploadResult = await fileService.uploadImage(file, dataType);
+      setUploadedImageUrl(uploadResult.url);
+      
+      // Simulate AI processing time (in a real app, this would call an AI service)
+      setTimeout(() => {
+        const mockData = generateMockData(title);
+        mockData.image_path = uploadResult.path;
+        onUpload(mockData);
+        setIsUploaded(true);
+        setIsProcessing(false);
+        toast({
+          title: "Data Processed Successfully",
+          description: `${title} data has been extracted and analyzed`,
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload Failed",
+        description: "There was a problem uploading your image. Please try again.",
+        variant: "destructive"
+      });
       setIsProcessing(false);
-    }, 2000);
+    }
   };
 
   const generateMockData = (type: string) => {
     if (type.includes('ABG')) {
       return {
-        pH: 7.18,
-        paCO2: 55,
-        paO2: 60,
+        ph: 7.18,
+        paco2: 55,
+        pao2: 60,
         hco3: 18,
-        anionGap: 22,
+        anion_gap: 22,
         fio2: 50,
         timestamp: new Date()
       };
@@ -60,8 +83,8 @@ const PhotoUpload = ({ title, description, icon, onUpload, priority }: PhotoUplo
         mode: 'AC/VC',
         fio2: 60,
         peep: 5,
-        tidalVolume: 400,
-        respiratoryRate: 12,
+        tidal_volume: 400,
+        respiratory_rate: 12,
         timestamp: new Date()
       };
     } else {
@@ -146,6 +169,15 @@ const PhotoUpload = ({ title, description, icon, onUpload, priority }: PhotoUplo
               <CheckCircle className="h-5 w-5" />
               <span className="font-medium">Data extracted successfully</span>
             </div>
+            {uploadedImageUrl && (
+              <div className="relative h-32 w-full overflow-hidden rounded-lg border border-gray-200">
+                <img 
+                  src={uploadedImageUrl} 
+                  alt={`Uploaded ${title}`}
+                  className="h-full w-full object-cover" 
+                />
+              </div>
+            )}
             <div className="bg-white rounded-lg p-3 border border-green-200">
               <p className="text-sm text-gray-600">
                 ✅ Image processed and values extracted

@@ -191,7 +191,7 @@ const LabResults = ({ data }: LabResultsProps) => {
               <p>• Calcium stabilizes cardiac membranes (priority #1)</p>
             )}
             {lactate >= 4.0 && (
-              <p>• Lactate >4 suggests tissue hypoperfusion</p>
+              <p>• Lactate &gt;4 suggests tissue hypoperfusion</p>
             )}
             {hemoglobin <= 7.0 && (
               <p>• Consider transfusion threshold and patient symptoms</p>
