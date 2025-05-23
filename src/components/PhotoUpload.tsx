@@ -47,8 +47,13 @@ const PhotoUpload = ({ title, description, icon, onUpload, priority, dataType }:
       // Simulate AI processing time (in a real app, this would call an AI service)
       setTimeout(() => {
         const mockData = generateMockData(title);
-        mockData.image_path = uploadResult.path;
-        onUpload(mockData);
+        // Add the image_path to the mockData object
+        const dataWithImagePath = {
+          ...mockData,
+          image_path: uploadResult.path
+        };
+        
+        onUpload(dataWithImagePath);
         setIsUploaded(true);
         setIsProcessing(false);
         toast({
