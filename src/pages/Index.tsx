@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import VentilatorPanel from '@/components/VentilatorPanel';
 import LabResults from '@/components/LabResults';
 import TreatmentPlan from '@/components/TreatmentPlan';
 import AuthForm from '@/components/AuthForm';
+import Logo from '@/components/Logo';
 import { authService, patientService } from '@/services/supabaseService';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -114,9 +114,7 @@ const Index = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 py-12">
         <div className="text-center mb-8">
-          <div className="p-3 bg-blue-600 rounded-lg inline-block mb-3">
-            <Activity className="h-8 w-8 text-white" />
-          </div>
+          <Logo size="lg" className="mx-auto mb-6" />
           <h1 className="text-3xl font-bold text-gray-900">CritiScan ICU AI</h1>
           <p className="text-gray-600 mt-1">Instant Critical Care Analysis</p>
         </div>
@@ -134,9 +132,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <Activity className="h-6 w-6 text-white" />
-              </div>
+              <Logo size="sm" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">CritiScan ICU AI</h1>
                 <p className="text-sm text-gray-600">Instant Critical Care Analysis</p>

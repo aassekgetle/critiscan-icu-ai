@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import ABGAnalysis from '@/components/ABGAnalysis';
 import VentilatorPanel from '@/components/VentilatorPanel';
 import LabResults from '@/components/LabResults';
 import TreatmentPlan from '@/components/TreatmentPlan';
+import Logo from '@/components/Logo';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { patientService, authService, abgService, ventilatorService, labService, treatmentPlanService } from '@/services/supabaseService';
@@ -173,9 +173,7 @@ const PatientDetail = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <Activity className="h-6 w-6 text-white" />
-              </div>
+              <Logo size="sm" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">CritiScan ICU AI</h1>
                 <div className="flex items-center gap-2">
