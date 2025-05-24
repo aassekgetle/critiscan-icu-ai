@@ -142,6 +142,102 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          subscription_tier:
+            | Database["public"]["Enums"]["subscription_tier"]
+            | null
+          updated_at: string | null
+          verification_notes: string | null
+          verification_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          subscription_tier?:
+            | Database["public"]["Enums"]["subscription_tier"]
+            | null
+          updated_at?: string | null
+          verification_notes?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          subscription_tier?:
+            | Database["public"]["Enums"]["subscription_tier"]
+            | null
+          updated_at?: string | null
+          verification_notes?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          failed_payment_count: number | null
+          id: string
+          status: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_period: Database["public"]["Enums"]["subscription_period"]
+          subscription_tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          failed_payment_count?: number | null
+          id?: string
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_period: Database["public"]["Enums"]["subscription_period"]
+          subscription_tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          failed_payment_count?: number | null
+          id?: string
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_period?: Database["public"]["Enums"]["subscription_period"]
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       treatment_plans: {
         Row: {
           abg_id: string | null
@@ -260,6 +356,48 @@ export type Database = {
           },
         ]
       }
+      verification_documents: {
+        Row: {
+          document_type: string
+          file_name: string
+          file_path: string
+          id: string
+          reviewed_at: string | null
+          reviewer_notes: string | null
+          uploaded_at: string | null
+          user_id: string | null
+          verification_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+        }
+        Insert: {
+          document_type: string
+          file_name: string
+          file_path: string
+          id?: string
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          uploaded_at?: string | null
+          user_id?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+        }
+        Update: {
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          uploaded_at?: string | null
+          user_id?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -268,7 +406,10 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      subscription_period: "monthly" | "yearly"
+      subscription_status: "active" | "canceled" | "past_due" | "incomplete"
+      subscription_tier: "student" | "nurse" | "doctor" | "teacher"
+      verification_status: "pending" | "approved" | "rejected" | "under_review"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -383,6 +524,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      subscription_period: ["monthly", "yearly"],
+      subscription_status: ["active", "canceled", "past_due", "incomplete"],
+      subscription_tier: ["student", "nurse", "doctor", "teacher"],
+      verification_status: ["pending", "approved", "rejected", "under_review"],
+    },
   },
 } as const

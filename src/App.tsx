@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Index from '@/pages/Index';
 import Patients from '@/pages/Patients';
 import PatientDetail from '@/pages/PatientDetail';
+import Subscription from '@/pages/Subscription';
 import NotFound from '@/pages/NotFound';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/patients" element={<Patients />} />
           <Route path="/patients/:patientId" element={<PatientDetail />} />
+          <Route path="/subscription" element={<Subscription />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
