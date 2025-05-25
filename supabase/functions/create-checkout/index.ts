@@ -74,6 +74,14 @@ serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
+    console.log('Creating Payeer checkout:', {
+      merchantId,
+      orderId,
+      amount: price,
+      currency,
+      description
+    });
+
     // Create Payeer payment URL
     const payeerParams = new URLSearchParams({
       m_shop: merchantId,
@@ -94,6 +102,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error: any) {
+    console.error('Checkout error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

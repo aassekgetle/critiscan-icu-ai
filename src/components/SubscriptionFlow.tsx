@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,28 @@ const SubscriptionFlow = () => {
 
   useEffect(() => {
     loadUserProfile();
+    checkPaymentSuccess();
   }, []);
+
+  const checkPaymentSuccess = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      toast({
+        title: "Payment Successful!",
+        description: "Your subscription has been activated. Welcome to CritiScan ICU AI!",
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('error') === 'true') {
+      toast({
+        title: "Payment Failed",
+        description: "There was an issue with your payment. Please try again.",
+        variant: "destructive"
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  };
 
   const loadUserProfile = async () => {
     try {
@@ -69,15 +89,15 @@ const SubscriptionFlow = () => {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           tier: selectedTier.id,
-          period: selectedPeriod,
-          price: selectedPeriod === 'monthly' ? selectedTier.monthlyPrice : selectedTier.yearlyPrice
+          period: selectedPeriod
         }
       });
 
       if (error) throw error;
       
       if (data.url) {
-        window.open(data.url, '_blank');
+        // Redirect to Payeer payment page
+        window.location.href = data.url;
       }
     } catch (error: any) {
       toast({
@@ -215,7 +235,7 @@ const SubscriptionFlow = () => {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Creating Checkout...' : 'Pay with Payeer'}
+              {isLoading ? 'Redirecting to Payment...' : 'Pay with Payeer'}
             </Button>
             
             <p className="text-xs text-gray-500">
