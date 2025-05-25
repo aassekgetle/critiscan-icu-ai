@@ -136,7 +136,8 @@ const SubscriptionPlans = ({ onSelectPlan, selectedTier, selectedPeriod }: Subsc
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <h3 className="font-semibold text-yellow-800 mb-2">Payment Information</h3>
         <div className="text-sm text-yellow-700 space-y-1">
-          <p>• Accepted payment methods: Visa, Mastercard, Skrill, and Neteller</p>
+          <p>• Accepted payment methods: Visa, Mastercard, PayPal, and local payment options</p>
+          <p>• Secure payment processing via 2Checkout (Verifone)</p>
           <p>• No trials or discounts available</p>
           <p>• Failed payments will be retried once before access is revoked</p>
           <p>• Full repayment required to reactivate after suspension</p>

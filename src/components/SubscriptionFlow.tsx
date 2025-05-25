@@ -215,11 +215,11 @@ const SubscriptionFlow = () => {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Creating Checkout...' : 'Pay with Stripe'}
+              {isLoading ? 'Creating Checkout...' : 'Pay with 2Checkout'}
             </Button>
             
             <p className="text-xs text-gray-500">
-              Payment processed securely by Stripe. Accepted methods: Visa, Mastercard, Skrill, Neteller
+              Payment processed securely by 2Checkout (Verifone). Accepted methods: Visa, Mastercard, PayPal, and more
             </p>
           </CardContent>
         </Card>

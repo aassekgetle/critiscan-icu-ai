@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -27,28 +26,23 @@ serve(async (req) => {
     
     if (!user?.email) throw new Error("User not authenticated");
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
-    });
-
-    // Get customer ID from subscriptions table
+    // Get customer subscription from subscriptions table
     const { data: subscription } = await supabaseClient
       .from("subscriptions")
-      .select("stripe_customer_id")
+      .select("stripe_subscription_id")
       .eq("user_id", user.id)
       .eq("status", "active")
       .single();
 
-    if (!subscription?.stripe_customer_id) {
+    if (!subscription?.stripe_subscription_id) {
       throw new Error("No active subscription found");
     }
 
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripe_customer_id,
-      return_url: `${req.headers.get("origin")}/subscription`,
-    });
+    // For 2Checkout, we'll redirect to their customer portal
+    // This is a simplified approach - in production, you might want to implement a custom portal
+    const portalUrl = `https://secure.2checkout.com/myaccount/`;
 
-    return new Response(JSON.stringify({ url: portalSession.url }), {
+    return new Response(JSON.stringify({ url: portalUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
