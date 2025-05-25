@@ -215,11 +215,11 @@ const SubscriptionFlow = () => {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Creating Checkout...' : 'Pay with 2Checkout'}
+              {isLoading ? 'Creating Checkout...' : 'Pay with Payeer'}
             </Button>
             
             <p className="text-xs text-gray-500">
-              Payment processed securely by 2Checkout (Verifone). Accepted methods: Visa, Mastercard, PayPal, and more
+              Payment processed securely by Payeer. Accepted methods: Visa, Mastercard, PayPal, Bitcoin, and 200+ payment systems worldwide
             </p>
           </CardContent>
         </Card>

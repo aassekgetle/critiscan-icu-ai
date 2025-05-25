@@ -45,66 +45,49 @@ serve(async (req) => {
 
     const price = TIER_PRICES[tier as keyof typeof TIER_PRICES][period as keyof typeof TIER_PRICES[keyof typeof TIER_PRICES]];
     
-    // Create 2Checkout order
-    const orderData = {
-      Currency: "USD",
-      Language: "en",
-      Country: "US",
-      CustomerIP: req.headers.get("x-forwarded-for") || "127.0.0.1",
-      ExternalReference: `${user.id}-${Date.now()}`,
-      Source: "critiscan-icu-ai.com",
-      BillingDetails: {
-        FirstName: user.user_metadata?.first_name || "User",
-        LastName: user.user_metadata?.last_name || "User",
-        Email: user.email,
-        Country: "BW"
-      },
-      Items: [{
-        Name: `CritiScan ICU AI - ${tier.charAt(0).toUpperCase() + tier.slice(1)} Plan`,
-        Description: `${period.charAt(0).toUpperCase() + period.slice(1)} subscription`,
-        Quantity: 1,
-        Price: price,
-        PriceType: "GROSS",
-        IsDynamic: true,
-        Recurrence: {
-          Enabled: true,
-          CycleLength: period === "monthly" ? 1 : 12,
-          CycleUnit: "MONTH",
-          CycleAmount: price,
-          ContractLength: 1,
-          ContractUnit: "YEAR"
-        }
-      }]
-    };
-
-    // Create 2Checkout session
-    const response = await fetch("https://api.2checkout.com/rest/6.0/orders/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Avangate-Authentication": `code="${Deno.env.get("TWOCHECKOUT_MERCHANT_CODE")}" date="${new Date().toISOString().split('T')[0]}" time="${new Date().toISOString().split('T')[1].split('.')[0]}" hash="${await generateHash()}"`,
-      },
-      body: JSON.stringify(orderData)
-    });
-
-    if (!response.ok) {
-      throw new Error(`2Checkout API error: ${response.statusText}`);
-    }
-
-    const orderResult = await response.json();
-
+    // Generate unique order ID
+    const orderId = `${user.id}-${tier}-${Date.now()}`;
+    
     // Create subscription record
     await supabaseClient.from("subscriptions").insert({
       user_id: user.id,
-      stripe_customer_id: null, // We'll use this field for 2Checkout customer reference
-      stripe_subscription_id: orderResult.RefNo, // Use RefNo as subscription ID
+      stripe_customer_id: null,
+      stripe_subscription_id: orderId,
       subscription_tier: tier,
       subscription_period: period,
       status: 'incomplete'
     });
 
-    // Generate payment URL
-    const paymentUrl = `https://secure.2checkout.com/checkout/buy?merchant=${Deno.env.get("TWOCHECKOUT_MERCHANT_CODE")}&tco-currency=USD&tco-amount=${price}&tco-item-name=${encodeURIComponent(`CritiScan ICU AI - ${tier} Plan`)}&tco-item-desc=${encodeURIComponent(`${period} subscription`)}&email=${encodeURIComponent(user.email)}&return-url=${encodeURIComponent(`${req.headers.get("origin")}/subscription?success=true`)}&return-type=redirect`;
+    // Create Payeer payment form parameters
+    const merchantId = Deno.env.get("PAYEER_MERCHANT_ID") || "";
+    const secretKey = Deno.env.get("PAYEER_SECRET_KEY") || "";
+    const currency = "USD";
+    const description = `CritiScan ICU AI - ${tier.charAt(0).toUpperCase() + tier.slice(1)} Plan (${period})`;
+    const successUrl = `${req.headers.get("origin")}/subscription?success=true`;
+    const failUrl = `${req.headers.get("origin")}/subscription?error=true`;
+    
+    // Generate signature for Payeer
+    const signString = `${merchantId}:${orderId}:${price}:${currency}:${description}:${secretKey}`;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(signString);
+    const hashBuffer = await crypto.subtle.digest('SHA256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    // Create Payeer payment URL
+    const payeerParams = new URLSearchParams({
+      m_shop: merchantId,
+      m_orderid: orderId,
+      m_amount: price.toFixed(2),
+      m_curr: currency,
+      m_desc: description,
+      m_sign: signature,
+      success_url: successUrl,
+      fail_url: failUrl,
+      lang: "en"
+    });
+
+    const paymentUrl = `https://payeer.com/merchant/?${payeerParams.toString()}`;
 
     return new Response(JSON.stringify({ url: paymentUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -117,18 +100,3 @@ serve(async (req) => {
     });
   }
 });
-
-async function generateHash() {
-  // This is a simplified hash generation - in production, implement proper HMAC-MD5
-  const merchantCode = Deno.env.get("TWOCHECKOUT_MERCHANT_CODE") || "";
-  const date = new Date().toISOString().split('T')[0];
-  const time = new Date().toISOString().split('T')[1].split('.')[0];
-  const secretKey = Deno.env.get("TWOCHECKOUT_SECRET_KEY") || "";
-  
-  const stringToHash = `${merchantCode}${date}${time}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(stringToHash + secretKey);
-  const hashBuffer = await crypto.subtle.digest('MD5', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}

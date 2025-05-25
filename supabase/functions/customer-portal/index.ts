@@ -38,9 +38,9 @@ serve(async (req) => {
       throw new Error("No active subscription found");
     }
 
-    // For 2Checkout, we'll redirect to their customer portal
-    // This is a simplified approach - in production, you might want to implement a custom portal
-    const portalUrl = `https://secure.2checkout.com/myaccount/`;
+    // For Payeer, we'll redirect to their account management page
+    // Users can manage their payments and subscriptions there
+    const portalUrl = `https://payeer.com/en/account/`;
 
     return new Response(JSON.stringify({ url: portalUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
