@@ -14,26 +14,59 @@ const TIER_PRICES = {
   teacher: { monthly: 15.00, yearly: 180.00 }
 };
 
+const logPaymentEvent = async (supabaseClient: any, eventData: any) => {
+  try {
+    await supabaseClient
+      .from('payment_logs')
+      .insert(eventData);
+  } catch (error) {
+    console.error('Failed to log payment event:', error);
+  }
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
 
+  let userId = null;
+  let requestData = null;
+
+  try {
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
+    userId = user?.id;
     
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { tier, period } = await req.json();
+    requestData = await req.json();
+    const { tier, period } = requestData;
+    
+    console.log('Create checkout request:', {
+      userId: user.id,
+      email: user.email,
+      tier,
+      period,
+      timestamp: new Date().toISOString()
+    });
+
+    // Log checkout creation attempt
+    await logPaymentEvent(supabaseClient, {
+      user_id: user.id,
+      event_type: 'checkout_creation_started',
+      function_name: 'create-checkout',
+      request_data: { tier, period, email: user.email },
+      ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+      user_agent: req.headers.get('user-agent')
+    });
     
     if (!TIER_PRICES[tier as keyof typeof TIER_PRICES]) {
       throw new Error("Invalid subscription tier");
@@ -48,6 +81,14 @@ serve(async (req) => {
     // Generate unique order ID
     const orderId = `${user.id}-${tier}-${Date.now()}`;
     
+    console.log('Creating subscription record:', {
+      orderId,
+      userId: user.id,
+      tier,
+      period,
+      price
+    });
+
     // Create subscription record
     await supabaseClient.from("subscriptions").insert({
       user_id: user.id,
@@ -79,7 +120,8 @@ serve(async (req) => {
       orderId,
       amount: price,
       currency,
-      description
+      description,
+      signatureLength: signature.length
     });
 
     // Create Payeer payment URL
@@ -97,12 +139,52 @@ serve(async (req) => {
 
     const paymentUrl = `https://payeer.com/merchant/?${payeerParams.toString()}`;
 
+    // Log successful checkout creation
+    await logPaymentEvent(supabaseClient, {
+      user_id: user.id,
+      event_type: 'checkout_created',
+      function_name: 'create-checkout',
+      order_id: orderId,
+      amount: price,
+      currency,
+      status: 'created',
+      request_data: { tier, period, email: user.email },
+      response_data: { paymentUrl, orderId },
+      ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+      user_agent: req.headers.get('user-agent')
+    });
+
+    console.log('Checkout created successfully:', {
+      orderId,
+      paymentUrl,
+      userId: user.id
+    });
+
     return new Response(JSON.stringify({ url: paymentUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error: any) {
-    console.error('Checkout error:', error);
+    console.error('Checkout error:', {
+      error: error.message,
+      userId,
+      requestData,
+      timestamp: new Date().toISOString()
+    });
+
+    // Log error
+    if (userId) {
+      await logPaymentEvent(supabaseClient, {
+        user_id: userId,
+        event_type: 'checkout_error',
+        function_name: 'create-checkout',
+        request_data: requestData,
+        error_message: error.message,
+        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        user_agent: req.headers.get('user-agent')
+      });
+    }
+
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

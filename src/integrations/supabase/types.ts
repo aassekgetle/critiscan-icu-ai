@@ -142,6 +142,57 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_logs: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          error_message: string | null
+          event_type: string
+          function_name: string
+          id: string
+          ip_address: string | null
+          order_id: string | null
+          request_data: Json | null
+          response_data: Json | null
+          status: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          error_message?: string | null
+          event_type: string
+          function_name: string
+          id?: string
+          ip_address?: string | null
+          order_id?: string | null
+          request_data?: Json | null
+          response_data?: Json | null
+          status?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          error_message?: string | null
+          event_type?: string
+          function_name?: string
+          id?: string
+          ip_address?: string | null
+          order_id?: string | null
+          request_data?: Json | null
+          response_data?: Json | null
+          status?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
